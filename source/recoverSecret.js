@@ -25,47 +25,53 @@ triplets1 = [
 ];
 
 const recoverSecret = function(triplets) {
-  const indexes = triplets.reduce((acc, triplet) => {
-    triplet.forEach(char => {      
-      const index = triplet.findIndex((tripletChar) => tripletChar === char);
-      const charsBefore = triplet.slice(0, index);
+  const previousByChar = Object.entries(
+    triplets.reduce((acc, triplet) => {
+      triplet.forEach(char => {      
+        const index = triplet.findIndex((tripletChar) => tripletChar === char);
+        const charsBefore = triplet.slice(0, index);
 
-      if (acc[char]) {
-        acc[char].push(
-          ...charsBefore
-        );
-      } else {
-        acc[char] = charsBefore;
-      }
+        acc = {
+          ...acc,
+          [char]: acc[char] ? [ ...acc[char], ...charsBefore ] : charsBefore,
+        }
 
-      acc[char] = [ ...new Set(acc[char]) ];
-    });
-
-    return acc;
-  }, {});
-
-  const sortedIndexes = Object.entries(indexes)
-    .sort(([ charA, charsABefore ], [ charB, charsBBefore ]) => {
-      return charsABefore.length - charsBBefore.length;
-    });
-
-  const result = sortedIndexes.reduce((acc, [char, charsBefore], index) => {
-    if (!index) {
-      acc += char;
-    }
-
-    sortedIndexes
-      .filter((item) => item[1].length <= charsBefore.length)
-      .find(([charB, charsBBefore]) => {
-         
+        acc[char] = [ ...new Set(acc[char]) ];
       });
 
-    return acc;
+      return acc;
+    }, {})
+  );
+
+  let word = '';
+  const charCount = Object.keys(previousByChar).length;
+
+  while (word.length < charCount) {
+    word += findNextChar(word, previousByChar);
+  }
+
+  return word;
+}
+
+function findNextChar(word, previousByChar) {
+  if (!word.length) {
+    return previousByChar.find(([char, charPrevious]) => !charPrevious.length)[0];
+  }
+
+  const chars = previousByChar.find(([char, charPrevious]) => {
+    if (!charPrevious.length || word.includes(char)) {
+      return false;
+    }
+
+    return charPrevious.every((charPrev) =>
+      word.includes(charPrev)
+    );
   });
 
-  return result;
+  return chars[0];
 }
 
 console.warn(
-  recoverSecret(triplets1)
+  recoverSecret(triplets1),
+  secret1,
 );
